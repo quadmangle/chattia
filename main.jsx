@@ -28,10 +28,9 @@ const App = () => {
     return !isUnsafe;
   };
 
+  //======== Tiny ML ========
   // --- Layer 4: Tiny ML Intent Classification ---
   const getTinyMLResponse = (input) => {
-    // This is a mock of a Tiny ML model. In a real scenario, this would be a
-    // lightweight model trained to classify user intent based on keywords.
     const lowerInput = input.toLowerCase();
 
     // Check for "weather" intent
@@ -44,8 +43,55 @@ const App = () => {
       return "I can connect you to a support agent. What's the issue?";
     }
 
-    // If no intent is recognized, return null to indicate the query needs
-    // to move to the next layer (Tiny LLM).
+    return null;
+  };
+
+  //======== Tiny LLM ========
+  // --- Layer 5: Tiny LLM (Simple Content Generation) ---
+  const getTinyLLMResponse = (input) => {
+      // This is a mock of a Tiny LLM. It generates a simple, contextual
+      // response for questions that aren't simple intent classifications.
+      const lowerInput = input.toLowerCase();
+      
+      if (lowerInput.includes('what is a chatbot')) {
+          return "A chatbot is a computer program or an artificial intelligence (AI) that conducts a conversation via auditory or textual methods.";
+      }
+
+      if (lowerInput.includes('who created you')) {
+          return "I am a prototype AI being built with a multi-layered architecture to demonstrate efficient processing and security.";
+      }
+      
+      // If the Tiny LLM cannot generate a response, return null
+      return null;
+  };
+
+  //======== Tiny AI ========
+  // --- Layer 6: Tiny AI (Complex Task Execution) ---
+  const getTinyAIResponse = (input) => {
+    // This is a mock of a Tiny AI. It's designed to perform a more complex,
+    // multi-step task or calculation.
+    const lowerInput = input.toLowerCase();
+    
+    // Check for a unit conversion task
+    if (lowerInput.includes('convert') && lowerInput.includes('celsius')) {
+      const tempMatch = input.match(/(\d+)\s*celsius/i);
+      if (tempMatch && tempMatch[1]) {
+        const celsius = parseFloat(tempMatch[1]);
+        const fahrenheit = (celsius * 9/5) + 32;
+        return `${celsius}°C is equal to ${fahrenheit.toFixed(2)}°F.`;
+      }
+    }
+    
+    // Check for a simple mathematical task
+    const mathMatch = lowerInput.match(/what is (\d+)\s*\+\s*(\d+)/i);
+    if (mathMatch) {
+      const num1 = parseInt(mathMatch[1]);
+      const num2 = parseInt(mathMatch[2]);
+      const sum = num1 + num2;
+      return `The sum of ${num1} and ${num2} is ${sum}.`;
+    }
+
+    // If the Tiny AI cannot handle the task, return null
     return null;
   };
   
@@ -56,7 +102,7 @@ const App = () => {
     }
   }, [messages]);
 
-  // Function to determine the bot's response based on the layered logic (Layers 2, 3, & 4)
+  // Function to determine the bot's response based on the layered logic
   const getBotResponse = (input) => {
     // Layer 2: First, validate the input for safety.
     if (!checkInputSafety(input)) {
@@ -74,9 +120,21 @@ const App = () => {
     if (tinyMLReply) {
         return tinyMLReply;
     }
+    
+    // Layer 5: If Layer 4 fails, pass the query to the Tiny LLM layer.
+    const tinyLLMReply = getTinyLLMResponse(input);
+    if (tinyLLMReply) {
+        return tinyLLMReply;
+    }
 
-    // Fallback: If no response from Layers 3 or 4, proceed to the next layer.
-    return "Processing your request... I'm sending this to the next level for more complex analysis.";
+    // Layer 6: If Layer 5 fails, pass the query to the Tiny AI layer.
+    const tinyAIResponse = getTinyAIResponse(input);
+    if (tinyAIResponse) {
+      return tinyAIResponse;
+    }
+
+    // Fallback: If no response from Layers 3, 4, 5, or 6, proceed to Layer 7.
+    return "Processing your request... This may take a moment as I'm passing your request to a larger model.";
   };
 
   // Function to handle sending a message
