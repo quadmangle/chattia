@@ -11,6 +11,29 @@ const App = () => {
   // Ref to automatically scroll the chat window to the bottom
   const chatWindowRef = useRef(null);
 
+  // --- Layer 3: Mock Google Sheets database of default replies ---
+  const defaultReplies = new Map([
+    ['hi', 'Hello there! It\'s great to chat with you.'],
+    ['hello', 'Hello there! It\'s great to chat with you.'],
+    ['how are you', 'I\'m doing great, thank you for asking! How about you?'],
+    ['what is your name', 'My name is Chattia, and I\'m here to assist you.'],
+    ['what can you do', 'I can help with simple questions and complex queries.'],
+  ]);
+
+  // --- Layer 2: Meta Firewall and Guardrails Logic ---
+  const checkInputSafety = (input) => {
+    // In a real application, this would use sophisticated models and rule sets
+    // from your forked Meta Firewall and CISA Tool (Thorium).
+    const unsafeKeywords = ['malware', 'exploit', 'unauthorized access', 'data breach'];
+    const lowerInput = input.toLowerCase();
+    
+    // Check if the input contains any of the unsafe keywords
+    const isUnsafe = unsafeKeywords.some(keyword => lowerInput.includes(keyword));
+    
+    // Return true if the input is safe, false if it's not.
+    return !isUnsafe;
+  };
+  
   // useEffect hook to scroll to the bottom whenever messages are updated
   useEffect(() => {
     if (chatWindowRef.current) {
@@ -18,35 +41,38 @@ const App = () => {
     }
   }, [messages]);
 
-  // Function to simulate a bot response based on user input
+  // Function to determine the bot's response based on the layered logic (Layers 2 & 3)
   const getBotResponse = (input) => {
-    const lowerInput = input.toLowerCase();
-    if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
-      return "Hello there! It's great to chat with you.";
-    } else if (lowerInput.includes('how are you')) {
-      return "I'm doing great, thank you for asking! How about you?";
-    } else if (lowerInput.includes('name')) {
-      return "My name is Chattia, and I'm here to assist you.";
+    // --- Layer 2 Check: First, validate the input for safety ---
+    if (!checkInputSafety(input)) {
+      // If the input is flagged as unsafe, immediately respond with a security message
+      // and do not proceed to the next layers.
+      return "I'm sorry, that query contains keywords that are not allowed. Please try a different message.";
+    }
+
+    // --- Layer 3 Check: If the input is safe, check for a default reply ---
+    const normalizedInput = input.toLowerCase().trim();
+    if (defaultReplies.has(normalizedInput)) {
+      return defaultReplies.get(normalizedInput);
     } else {
-      // This is where you would eventually call Layer 3, 4, 5, etc.
-      return "I'm still learning! Please try asking something else, or let me know what you'd like to talk about.";
+      // If no default reply is found, the query would proceed to Layers 4, 5, 6, and 7.
+      // We simulate this with a "thinking" message.
+      return "Processing your request... I'm sending this to the Tiny models for more complex analysis.";
     }
   };
 
   // Function to handle sending a message
   const handleSendMessage = (e) => {
-    e.preventDefault(); // Prevents the form from refreshing the page
+    e.preventDefault();
     const text = userInput.trim();
-
     if (text === '') return;
 
-    // Add the user's message to the messages state
     setMessages(prevMessages => [...prevMessages, { text: text, sender: 'user' }]);
-    setUserInput(''); // Clear the input field
+    setUserInput('');
 
-    // Simulate the bot's response with a slight delay
+    const botReply = getBotResponse(text);
+
     setTimeout(() => {
-      const botReply = getBotResponse(text);
       setMessages(prevMessages => [...prevMessages, { text: botReply, sender: 'bot' }]);
     }, 700);
   };
