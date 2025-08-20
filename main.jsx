@@ -11,6 +11,26 @@ const App = () => {
   // Ref to automatically scroll the chat window to the bottom
   const chatWindowRef = useRef(null);
 
+  // State to control dark mode and initialize based on the user's preference
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('darkMode');
+      if (stored !== null) {
+        return stored === 'true';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  // Persist the preference and apply a root-level class for theming
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('darkMode', isDarkMode);
+    }
+    document.documentElement.classList.toggle('dark', isDarkMode);
+  }, [isDarkMode]);
+
   // --- Layer 3: Mock Google Sheets database of default replies ---
   const defaultReplies = new Map([
     ['hi', 'Hello there! It\'s great to chat with you.'],
@@ -177,15 +197,13 @@ const App = () => {
   // Component for displaying a single message bubble
   const MessageBubble = ({ text, sender }) => {
     const isUser = sender === 'user';
+    const botClasses = isDarkMode
+      ? 'bg-gray-700 text-gray-100 rounded-bl-none'
+      : 'bg-gray-200 text-gray-800 rounded-bl-none';
+    const userClasses = 'bg-blue-600 text-white rounded-br-none';
     return (
       <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-        <div className={`
-          p-3 rounded-2xl max-w-sm shadow-md
-          ${isUser
-            ? 'bg-blue-600 text-white rounded-br-none'
-            : 'bg-gray-200 text-gray-800 rounded-bl-none'
-          }
-        `}>
+        <div className={`p-3 rounded-2xl max-w-sm shadow-md ${isUser ? userClasses : botClasses}`}>
           {text}
         </div>
       </div>
@@ -193,8 +211,20 @@ const App = () => {
   };
 
   return (
-    <div className="flex items-center justify-center p-4 min-h-screen bg-gray-100 font-sans antialiased">
-      <div className="flex flex-col w-full max-w-2xl h-[80vh] bg-white rounded-3xl shadow-2xl overflow-hidden">
+    <div className={`flex items-center justify-center p-4 min-h-screen font-sans antialiased ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
+      <div className={`flex flex-col w-full max-w-2xl h-[80vh] rounded-3xl shadow-2xl overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+        {/* Header with dark mode toggle */}
+        <div className={`flex items-center justify-between p-4 border-b ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+          <span className="font-semibold">Chattia</span>
+          <button
+            onClick={() => setIsDarkMode(prev => !prev)}
+            className="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Toggle dark mode"
+          >
+            {isDarkMode ? '☀️' : '🌙'}
+          </button>
+        </div>
+
         {/* Chat window */}
         <div ref={chatWindowRef} className="flex-1 overflow-y-auto p-6 space-y-4">
           {messages.map((msg, index) => (
@@ -203,14 +233,14 @@ const App = () => {
         </div>
 
         {/* Input form */}
-        <form onSubmit={handleSendMessage} className="p-4 bg-gray-50 border-t border-gray-200">
+        <form onSubmit={handleSendMessage} className={`p-4 border-t ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
           <div className="flex items-center space-x-2">
             <input
               type="text"
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 p-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+              className={`flex-1 p-3 rounded-full border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
             />
             <button
               type="submit"
@@ -218,7 +248,7 @@ const App = () => {
               aria-label="Send message"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.770 013.27 20.876L5.999 12zm0 0h7.5" />
               </svg>
             </button>
           </div>
@@ -226,6 +256,7 @@ const App = () => {
       </div>
     </div>
   );
+
 };
 
 export default App;
