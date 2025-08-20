@@ -94,6 +94,25 @@ const App = () => {
     // If the Tiny AI cannot handle the task, return null
     return null;
   };
+
+  //======== Layer 7 ========
+  // --- Layer 7: Larger LLM/ML/AI Backend Call with Cloudflare Worker & Encryption ---
+  const callLargeModelAPI = async (input) => {
+    // This is a mock-up of the encryption and API call process.
+    // In a real application, you'd encrypt the input before sending it.
+    console.log("Encrypting query and calling the Cloudflare Worker backend...");
+
+    // Mock API call simulation
+    return new Promise(resolve => {
+      setTimeout(() => {
+        // Mock response from the larger model
+        const response = `I've processed your complex query using a larger model. The answer to your question "${input}" is in the works!`;
+        console.log("Received encrypted response. Decrypting...");
+        // In a real app, you would decrypt the response here.
+        resolve(response);
+      }, 2000); // Simulate a network delay
+    });
+  };
   
   // useEffect hook to scroll to the bottom whenever messages are updated
   useEffect(() => {
@@ -103,7 +122,7 @@ const App = () => {
   }, [messages]);
 
   // Function to determine the bot's response based on the layered logic
-  const getBotResponse = (input) => {
+  const getBotResponse = async (input) => {
     // Layer 2: First, validate the input for safety.
     if (!checkInputSafety(input)) {
       return "I'm sorry, that query contains keywords that are not allowed. Please try a different message.";
@@ -133,12 +152,13 @@ const App = () => {
       return tinyAIResponse;
     }
 
-    // Fallback: If no response from Layers 3, 4, 5, or 6, proceed to Layer 7.
-    return "Processing your request... This may take a moment as I'm passing your request to a larger model.";
+    // Layer 7: Final fallback for complex queries.
+    const finalResponse = await callLargeModelAPI(input);
+    return finalResponse;
   };
 
   // Function to handle sending a message
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     const text = userInput.trim();
     if (text === '') return;
@@ -146,7 +166,8 @@ const App = () => {
     setMessages(prevMessages => [...prevMessages, { text: text, sender: 'user' }]);
     setUserInput('');
 
-    const botReply = getBotResponse(text);
+    // Await the response from the layered logic
+    const botReply = await getBotResponse(text);
 
     setTimeout(() => {
       setMessages(prevMessages => [...prevMessages, { text: botReply, sender: 'bot' }]);
