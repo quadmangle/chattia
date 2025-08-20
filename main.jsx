@@ -22,16 +22,31 @@ const App = () => {
 
   // --- Layer 2: Meta Firewall and Guardrails Logic ---
   const checkInputSafety = (input) => {
-    // In a real application, this would use sophisticated models and rule sets
-    // from your forked Meta Firewall and CISA Tool (Thorium).
     const unsafeKeywords = ['malware', 'exploit', 'unauthorized access', 'data breach'];
     const lowerInput = input.toLowerCase();
-    
-    // Check if the input contains any of the unsafe keywords
     const isUnsafe = unsafeKeywords.some(keyword => lowerInput.includes(keyword));
-    
-    // Return true if the input is safe, false if it's not.
     return !isUnsafe;
+  };
+
+  // --- Layer 4: Tiny ML Intent Classification ---
+  const getTinyMLResponse = (input) => {
+    // This is a mock of a Tiny ML model. In a real scenario, this would be a
+    // lightweight model trained to classify user intent based on keywords.
+    const lowerInput = input.toLowerCase();
+
+    // Check for "weather" intent
+    if (lowerInput.includes('weather') || lowerInput.includes('forecast')) {
+      return "I can check the weather for you. What city are you in?";
+    }
+
+    // Check for "support" intent
+    if (lowerInput.includes('help') || lowerInput.includes('support')) {
+      return "I can connect you to a support agent. What's the issue?";
+    }
+
+    // If no intent is recognized, return null to indicate the query needs
+    // to move to the next layer (Tiny LLM).
+    return null;
   };
   
   // useEffect hook to scroll to the bottom whenever messages are updated
@@ -41,24 +56,27 @@ const App = () => {
     }
   }, [messages]);
 
-  // Function to determine the bot's response based on the layered logic (Layers 2 & 3)
+  // Function to determine the bot's response based on the layered logic (Layers 2, 3, & 4)
   const getBotResponse = (input) => {
-    // --- Layer 2 Check: First, validate the input for safety ---
+    // Layer 2: First, validate the input for safety.
     if (!checkInputSafety(input)) {
-      // If the input is flagged as unsafe, immediately respond with a security message
-      // and do not proceed to the next layers.
       return "I'm sorry, that query contains keywords that are not allowed. Please try a different message.";
     }
 
-    // --- Layer 3 Check: If the input is safe, check for a default reply ---
+    // Layer 3: If safe, check for a default reply.
     const normalizedInput = input.toLowerCase().trim();
     if (defaultReplies.has(normalizedInput)) {
       return defaultReplies.get(normalizedInput);
-    } else {
-      // If no default reply is found, the query would proceed to Layers 4, 5, 6, and 7.
-      // We simulate this with a "thinking" message.
-      return "Processing your request... I'm sending this to the Tiny models for more complex analysis.";
     }
+    
+    // Layer 4: If no default reply, pass the query to the Tiny ML layer.
+    const tinyMLReply = getTinyMLResponse(input);
+    if (tinyMLReply) {
+        return tinyMLReply;
+    }
+
+    // Fallback: If no response from Layers 3 or 4, proceed to the next layer.
+    return "Processing your request... I'm sending this to the next level for more complex analysis.";
   };
 
   // Function to handle sending a message
